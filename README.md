@@ -37,7 +37,7 @@
 ```bash
 project/
 │
-├── sysop/               # 后台管理页面
+├── admin/               # 后台管理页面
 │   ├── index.php        # 图片管理主页面
 │   ├── login.php        # 登录页面
 │   └── delete.php       # 删除图片的处理脚本
@@ -85,7 +85,7 @@ project/
 
 ### 2. 后台图片管理页面
 
-- 访问 `http://yourserver.com/sysop/` 进入图片管理后台。
+- 访问 `http://yourserver.com/admin/` 进入图片管理后台。
 - 用户需要输入账号和密码进行登录，默认账号和密码如下：
   - 用户名：`admin`
   - 密码：`abc123`
