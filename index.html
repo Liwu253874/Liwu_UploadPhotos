@@ -29,9 +29,9 @@
             height: 100%;
             background-size: cover;
             background-position: center;
-            transition: opacity 1.5s ease-in-out;
             opacity: 0;
             z-index: -1;
+            transition: opacity 1.5s ease-in-out;
         }
         .background.show {
             opacity: 1;
@@ -51,7 +51,6 @@
         .uniform-height {
             margin-top: 20px;
         }
-        /* 灰色边框 */
         .form-control-file, #linkBox {
             border: 1px solid gray;
             padding: 10px;
@@ -60,6 +59,12 @@
         .btn-copy {
             background-color: #28a745;
             color: white;
+        }
+        .btn-group {
+            margin-top: 10px;
+        }
+        .btn-group button {
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -76,16 +81,26 @@
             </div>
             <button type="submit" class="btn btn-primary" id="uploadButton">上传图片</button>
         </form>
+
+        <!-- 粘贴图片的预览 -->
+        <img id="pasteImage" style="max-width: 100%; max-height: 200px; display: none;" alt="粘贴图片预览">
+
+        <!-- 显示图片链接的按钮 -->
         <div class="link-box uniform-height" id="linkBox" style="display:none;">
             <p>图片上传成功，点击查看: <a href="#" id="imageLink" target="_blank"></a></p>
+            <div class="btn-group">
+                <button class="btn btn-light" id="urlButton">URL</button>
+                <button class="btn btn-light" id="htmlButton">HTML</button>
+                <button class="btn btn-light" id="markdownButton">Markdown</button>
+            </div>
         </div>
         <div class="message uniform-height" id="messageBox"></div>
-        <p style="font-size: 14px; text-align: center;">
+          <p style="font-size: 14px; text-align: center;">
         猛击<a href="https://www.253874.net/inv/" target="_blank" rel="noopener noreferrer">这里</a>自助获得里屋社区邀请码。
-      </p>
-      <p style="font-size: 14px; text-align: center;">
-      该图床项目开源于 GitHub - <a href="https://github.com/Liwu253874/Liwu_UploadPhotos" rel="noopener noreferrer">Liwu253874</a>
-      </p>
+          </p>
+          <p style="font-size: 14px; text-align: center;">
+          该图床项目开源于 GitHub - <a href="https://github.com/Liwu253874/Liwu_UploadPhotos" rel="noopener noreferrer">Liwu253874</a>
+          </p>
     </div>
 
     <!-- 引入Bootstrap和Toastr的JS文件 -->
@@ -106,17 +121,17 @@
         var currentIndex = 0;
 
         function changeBackgroundImage() {
-            // 暂时隐藏当前背景
+            // 将当前背景淡出
             background.classList.remove('show');
 
-            // 延时1.5秒等背景隐藏后再切换图片
+            // 延时1秒等背景隐藏后再切换图片
             setTimeout(function () {
                 background.style.backgroundImage = 'url(' + images[currentIndex] + ')';
                 currentIndex = (currentIndex + 1) % images.length;
 
-                // 显示新的背景图片
+                // 将背景淡入
                 background.classList.add('show');
-            }, 1500); 
+            }, 1000);  // 延时1秒
         }
 
         // 初始化背景图片
@@ -141,22 +156,23 @@
 
                         toastr.success('图片上传成功！');
 
-                        // 将上传按钮改为“复制图片地址”按钮
-                        uploadButton.textContent = '复制图片地址';
-                        uploadButton.classList.remove('btn-primary');
-                        uploadButton.classList.add('btn-copy');
+                        // 更新按钮点击事件
+                        document.getElementById('urlButton').onclick = function() {
+                            copyToClipboard(response.imageUrl);
+                            toastr.success('URL 已复制到剪切板！');
+                        };
 
-                        // 添加点击事件，将图片地址复制到剪切板
-                        uploadButton.addEventListener('click', function() {
-                            var tempInput = document.createElement('input');
-                            document.body.appendChild(tempInput);
-                            tempInput.value = response.imageUrl;
-                            tempInput.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(tempInput);
+                        document.getElementById('htmlButton').onclick = function() {
+                            var htmlCode = '<img src="' + response.imageUrl + '" alt="图片">';
+                            copyToClipboard(htmlCode);
+                            toastr.success('HTML 已复制到剪切板！');
+                        };
 
-                            toastr.success('图片地址已复制到剪切板！');
-                        });
+                        document.getElementById('markdownButton').onclick = function() {
+                            var markdownCode = '![](' + response.imageUrl + ')';
+                            copyToClipboard(markdownCode);
+                            toastr.success('Markdown 已复制到剪切板！');
+                        };
                     } else {
                         toastr.error(response.message);
                     }
@@ -166,8 +182,8 @@
             };
             xhr.send(formData);
         });
-        
-          // 粘贴功能实现
+
+         // 粘贴功能实现
         window.addEventListener('paste', function (event) {
             var items = (event.clipboardData || event.originalEvent.clipboardData).items;
             for (var i = 0; i < items.length; i++) {
@@ -200,6 +216,24 @@
                                 document.getElementById('linkBox').style.display = 'block';
                                 document.getElementById('imageLink').href = data.imageUrl;
                                 document.getElementById('imageLink').textContent = data.imageUrl;
+
+                                // 更新按钮点击事件
+                                document.getElementById('urlButton').onclick = function() {
+                                    copyToClipboard(data.imageUrl);
+                                    toastr.success('URL 已复制到剪切板！');
+                                };
+
+                                document.getElementById('htmlButton').onclick = function() {
+                                    var htmlCode = '<img src="' + data.imageUrl + '" alt="图片">';
+                                    copyToClipboard(htmlCode);
+                                    toastr.success('HTML 已复制到剪切板！');
+                                };
+
+                                document.getElementById('markdownButton').onclick = function() {
+                                    var markdownCode = '![](' + data.imageUrl + ')';
+                                    copyToClipboard(markdownCode);
+                                    toastr.success('Markdown 已复制到剪切板！');
+                                };
                             } else {
                                 toastr.error('上传失败');
                             }
@@ -212,7 +246,17 @@
                 }
             }
         });
+
+        
+        // 复制到剪切板功能
+        function copyToClipboard(text) {
+            var tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = text;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+        }
     </script>
 </body>
-
 </html>
