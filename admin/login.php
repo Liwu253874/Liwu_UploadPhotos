@@ -1,13 +1,11 @@
 <?php
-session_start();
-
-// 强制设置会话持续到浏览器关闭
-ini_set('session.cookie_lifetime', 0);  // 会话cookie的生命周期，0表示浏览器关闭即失效
-
-// 如果已经登录，重定向到后台页面
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-    header('Location: index.php');
-    exit();
+// 检查是否会话已经启动
+if (session_status() === PHP_SESSION_NONE) {
+    // 确保只在会话未启动时设置 session 配置
+    ini_set('session.cookie_lifetime', 0);  // 设置会话在浏览器关闭时失效
+    session_start(); // 启动会话
+} else {
+    session_start(); // 仅启动会话，不修改 session 配置
 }
 
 // 登录验证逻辑
