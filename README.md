@@ -41,6 +41,7 @@ project/
 │   └── delete.php       # 删除图片的处理脚本
 │
 ├── uploads/             # 图片上传目录
+├── background/          # 首页背景图片目录
 │
 ├── index.php            # 前台图片上传页面
 ├── upload.php           # 图片上传处理脚本
