@@ -41,6 +41,7 @@ project/
 │   └── delete.php       # 删除图片的处理脚本
 │
 ├── uploads/             # 图片上传目录
+├── background/          # 首页背景图片目录
 │
 ├── index.php            # 前台图片上传页面
 ├── upload.php           # 图片上传处理脚本
@@ -63,19 +64,14 @@ project/
    chmod 777 uploads/
    ```
 
-3. **运行 PHP 服务**
-   - 在本地测试时，可以使用 PHP 内置服务器运行：
-   
-   ```bash
-   php -S localhost:8000
-   ```
-   - 然后在浏览器中访问 `http://localhost:8000` 来查看前台上传页面。
+3. **运行 **
+   访问指向根目录的域名即可。
 
 ## 使用说明
 
 ### 1. 前台图片上传页面
 
-- 访问 `http://yourserver.com/index.html` 进入前台图片上传页面。
+- 访问 `http://[yourdomain.com]/` 进入前台图片上传页面。
 - 用户可以通过以下几种方式上传图片：
   - 通过文件选择按钮选择本地图片文件进行上传。
   - 将图片粘贴（`Ctrl+V`）到页面上，系统会自动检测剪贴板中的图片并上传。
@@ -83,7 +79,7 @@ project/
 
 ### 2. 后台图片管理页面
 
-- 访问 `http://yourserver.com/admin/` 进入图片管理后台。
+- 访问 `http://[yourdomain.com]/admin/` 进入图片管理后台。
 - 用户需要输入账号和密码进行登录，默认账号和密码如下：
   - 用户名：`admin`
   - 密码：`abc123`
