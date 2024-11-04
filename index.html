@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="基于本地的极简图床服务">
     <meta name="keywords" content="图床, 图床, PHP图床, 上传图片">
-    <title>软妹子牌里屋支持工具</title>
+    <title>里屋图床</title>
     <link rel="icon" type="image/png" href="https://www.mopsite.net/icon/icon32.png">
     <!-- 引入Bootstrap 和 Toastr的CSS文件 -->
     <link href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/twitter-bootstrap/4.6.1/css/bootstrap.min.css" rel="stylesheet" />
@@ -77,13 +77,21 @@
         <h2>里屋发帖贴图助手</h2>
         <form id="uploadForm" enctype="multipart/form-data">
             <div class="form-group">
-                <input type="file" name="fileToUpload" id="fileToUpload" class="form-control-file" required>
+                <input type="file" name="fileToUpload" id="fileToUpload" class="form-control-file">
             </div>
-            <button type="submit" class="btn btn-primary" id="uploadButton">上传图片</button>
+            <button type="submit" class="btn btn-primary" id="uploadButton" style="margin-top: 10px;" disabled>上传图片</button>
         </form>
 
         <!-- 粘贴图片的预览 -->
         <img id="pasteImage" style="max-width: 100%; max-height: 200px; display: none;" alt="粘贴图片预览">
+
+        <!-- 上传进度条和状态 -->
+        <div id="uploadProgress" style="display:none; margin-top: 10px;">
+            <p>图片上传中……</p>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 0%;" id="progressBar"></div>
+            </div>
+        </div>
 
         <!-- 显示图片链接的按钮 -->
         <div class="link-box uniform-height" id="linkBox" style="display:none;">
@@ -94,7 +102,7 @@
                 <button class="btn btn-light" id="markdownButton">Markdown</button>
             </div>
         </div>
-        <div class="message uniform-height" id="messageBox"></div>
+                <div class="message uniform-height" id="messageBox"></div>
           <p style="font-size: 14px; text-align: center;">
         猛击<a href="https://www.253874.net/inv/" target="_blank" rel="noopener noreferrer">这里</a>自助获得里屋社区邀请码。
           </p>
@@ -127,11 +135,11 @@
             // 延时1秒等背景隐藏后再切换图片
             setTimeout(function () {
                 background.style.backgroundImage = 'url(' + images[currentIndex] + ')';
-                currentIndex = (currentIndex + 1) % images.length;
+                currentIndex = (currentIndex + 2) % images.length;
 
                 // 将背景淡入
                 background.classList.add('show');
-            }, 1000);  // 延时1秒
+            }, 1500);  // 延时1.5秒
         }
 
         // 初始化背景图片
@@ -141,11 +149,47 @@
         // 文件上传功能的AJAX逻辑
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            var formData = new FormData(this);
+            var formData = new FormData();
+            var pasteImage = document.getElementById('pasteImage');
+            var fileInput = document.getElementById('fileToUpload');
             var uploadButton = document.getElementById('uploadButton');
+            var uploadProgress = document.getElementById('uploadProgress');
+            var progressBar = document.getElementById('progressBar');
 
+            // 禁用按钮并显示上传进度
+            uploadButton.style.display = 'none';
+            uploadProgress.style.display = 'block';
+
+            if (pasteImage.src && pasteImage.style.display === 'block') {
+                // 如果预览图片存在，则从预览中获取 Blob 数据
+                fetch(pasteImage.src)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        formData.append('fileToUpload', blob, 'pasted-image.png');
+                        uploadImage(formData);
+                    });
+            } else if (fileInput.files.length > 0) {
+                formData.append('fileToUpload', fileInput.files[0]);
+                uploadImage(formData);
+            } else {
+                toastr.error('请先选择一张图片或粘贴一张图片进行上传。');
+                uploadButton.style.display = 'block';
+                uploadProgress.style.display = 'none';
+            }
+        });
+
+        function uploadImage(formData) {
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "upload.php", true);
+
+            // 上传进度事件监听器
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    var percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText);
@@ -175,15 +219,24 @@
                         };
                     } else {
                         toastr.error(response.message);
+                        resetUploadUI();
                     }
                 } else {
                     toastr.error('上传失败，请重试。');
+                    resetUploadUI();
                 }
             };
             xhr.send(formData);
-        });
+        }
 
-         // 粘贴功能实现
+        // 重置上传UI
+        function resetUploadUI() {
+            document.getElementById('uploadButton').style.display = 'block';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('progressBar').style.width = '0%';
+        }
+
+        // 粘贴功能实现
         window.addEventListener('paste', function (event) {
             var items = (event.clipboardData || event.originalEvent.clipboardData).items;
             for (var i = 0; i < items.length; i++) {
@@ -197,57 +250,25 @@
                         reader.onload = function (e) {
                             pasteImage.src = e.target.result;
                             pasteImage.style.display = 'block';
+                            document.getElementById('uploadButton').style.display = 'block';
+                            document.getElementById('uploadButton').disabled = false;
                         };
 
                         reader.readAsDataURL(blob);
-
-                        // 自动上传粘贴的图片
-                        var formData = new FormData();
-                        formData.append('fileToUpload', blob);
-
-                        fetch('upload.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                toastr.success('粘贴图片上传成功！');
-                                document.getElementById('linkBox').style.display = 'block';
-                                document.getElementById('imageLink').href = data.imageUrl;
-                                document.getElementById('imageLink').textContent = data.imageUrl;
-
-                                // 更新按钮点击事件
-                                document.getElementById('urlButton').onclick = function() {
-                                    copyToClipboard(data.imageUrl);
-                                    toastr.success('URL 已复制到剪切板！');
-                                };
-
-                                document.getElementById('htmlButton').onclick = function() {
-                                    var htmlCode = '<img src="' + data.imageUrl + '" alt="图片">';
-                                    copyToClipboard(htmlCode);
-                                    toastr.success('HTML 已复制到剪切板！');
-                                };
-
-                                document.getElementById('markdownButton').onclick = function() {
-                                    var markdownCode = '![](' + data.imageUrl + ')';
-                                    copyToClipboard(markdownCode);
-                                    toastr.success('Markdown 已复制到剪切板！');
-                                };
-                            } else {
-                                toastr.error('上传失败');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('上传错误', error);
-                            toastr.error('上传失败');
-                        });
                     }
                 }
             }
         });
 
-        
+        // 文件选择功能实现
+        document.getElementById('fileToUpload').addEventListener('change', function () {
+            if (this.files.length > 0) {
+                document.getElementById('uploadButton').disabled = false;
+            } else {
+                document.getElementById('uploadButton').disabled = true;
+            }
+        });
+
         // 复制到剪切板功能
         function copyToClipboard(text) {
             var tempInput = document.createElement('input');
@@ -258,5 +279,6 @@
             document.body.removeChild(tempInput);
         }
     </script>
+
 </body>
 </html>
